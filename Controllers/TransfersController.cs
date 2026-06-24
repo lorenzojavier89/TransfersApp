@@ -23,7 +23,10 @@ public class TransfersController : ControllerBase
         [FromBody] CreateTransferRequest request)
     {
         if (string.IsNullOrWhiteSpace(idempotencyKey))
-            return BadRequest("The 'Idempotency-Key' header is required.");
+            return Problem(
+                detail: "The 'Idempotency-Key' header is required.",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Bad Request");
 
         var bodyHash = $"{request.SourceAccountId}|{request.DestinationAccountId}|{request.Amount}|{request.Currency}";
 

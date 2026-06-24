@@ -79,6 +79,29 @@ public class TransfersApiTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task PostTransfer_MissingIdempotencyKey_Returns400ProblemDetails()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/transfers")
+        {
+            Content = JsonContent.Create(new
+            {
+                sourceAccountId = "11111111-1111-1111-1111-111111111111",
+                destinationAccountId = "22222222-2222-2222-2222-222222222222",
+                amount = 10.00m,
+                currency = "USD"
+            })
+        };
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(400, problem.GetProperty("status").GetInt32());
+        Assert.False(string.IsNullOrEmpty(problem.GetProperty("detail").GetString()));
+    }
+
+    [Fact]
     public async Task PostTransfer_SameKeyDifferentBody_AtLeastOneCreatedRestConflict()
     {
         // Same key, 5 different amounts — one wins and returns 201, the rest return 409
