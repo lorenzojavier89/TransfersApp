@@ -1,0 +1,6 @@
+@TransfersApp_HostAddress = http://localhost:5210
+
+GET {{TransfersApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

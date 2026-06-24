@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="TransfersApp.csproj" />
+  <Project Path="TransfersApp.Application\TransfersApp.Application.csproj" />
+  <Project Path="TransfersApp.Domain\TransfersApp.Domain.csproj" />
+  <Project Path="TransfersApp.Repositories\TransfersApp.Repositories.csproj" />
+  <Project Path="TransfersApp.UnitTests\TransfersApp.UnitTests.csproj" />
+  <Project Path="TransfersApp.IntegrationTests\TransfersApp.IntegrationTests.csproj" />
+</Solution>
