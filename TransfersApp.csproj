@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+	  <OutputPath>C:\b\api_out\</OutputPath>
+	  <IntermediateOutputPath>C:\b\api_obj\</IntermediateOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
