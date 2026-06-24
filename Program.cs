@@ -10,6 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<ITransferRepository, InMemoryTransferRepository>();
+builder.Services.AddSingleton<IIdempotencyService, InMemoryIdempotencyService>();
 builder.Services.AddScoped<ITransfersService, TransfersService>();
 
 builder.Services.AddProblemDetails();

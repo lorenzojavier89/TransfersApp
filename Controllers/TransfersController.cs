@@ -9,10 +9,12 @@ namespace TransfersApp.Controllers;
 public class TransfersController : ControllerBase
 {
     private readonly ITransfersService _service;
+    private readonly IIdempotencyService _idempotencyService;
 
-    public TransfersController(ITransfersService service)
+    public TransfersController(ITransfersService service, IIdempotencyService idempotencyService)
     {
         _service = service;
+        _idempotencyService = idempotencyService;
     }
 
     [HttpPost]
@@ -23,13 +25,24 @@ public class TransfersController : ControllerBase
         if (string.IsNullOrWhiteSpace(idempotencyKey))
             return BadRequest("The 'Idempotency-Key' header is required.");
 
-        var transfer = await _service.ApplyTransferAsync(
-            request.SourceAccountId,
-            request.DestinationAccountId,
-            request.Amount,
-            request.Currency);
+        var bodyHash = $"{request.SourceAccountId}|{request.DestinationAccountId}|{request.Amount}|{request.Currency}";
 
-        return CreatedAtAction(nameof(GetTransfer), new { id = transfer.Id }, transfer);
+        var result = await _idempotencyService.ExecuteAsync(
+            idempotencyKey,
+            bodyHash,
+            () => _service.ApplyTransferAsync(
+                request.SourceAccountId,
+                request.DestinationAccountId,
+                request.Amount,
+                request.Currency));
+
+        return result switch
+        {
+            NewTransfer(var t)    => CreatedAtAction(nameof(GetTransfer), new { id = t.Id }, t),
+            CachedTransfer(var t) => CreatedAtAction(nameof(GetTransfer), new { id = t.Id }, t),
+            ConflictingBody       => Conflict("A different transfer with the same Idempotency-Key already exists."),
+            _                     => throw new InvalidOperationException("Unexpected idempotency result")
+        };
     }
 
     [HttpGet("{id:guid}")]
