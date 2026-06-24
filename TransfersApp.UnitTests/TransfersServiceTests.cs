@@ -70,7 +70,7 @@ public class TransfersServiceTests
     }
 
     [Fact]
-    public async Task ApplyTransferAsync_CurrencyMismatch_ThrowsCurrencyMismatchException()
+    public async Task ApplyTransferAsync_AccountCurrencyMismatch_ThrowsCurrencyMismatchException()
     {
         var sourceId = Guid.NewGuid();
         var destinationId = Guid.NewGuid();
@@ -85,5 +85,24 @@ public class TransfersServiceTests
 
         await Assert.ThrowsAsync<CurrencyMismatchException>(
             () => service.ApplyTransferAsync(sourceId, destinationId, 100m, "USD"));
+    }
+
+    [Fact]
+    public async Task ApplyTransferAsync_TransferCurrencyDoesNotMatchAccountCurrency_ThrowsCurrencyMismatchException()
+    {
+        var sourceId = Guid.NewGuid();
+        var destinationId = Guid.NewGuid();
+
+        var mockRepo = new Mock<ITransferRepository>();
+        mockRepo.Setup(r => r.GetAccountByIdAsync(sourceId))
+            .ReturnsAsync(new Account { Id = sourceId, Currency = "USD" });
+        mockRepo.Setup(r => r.GetAccountByIdAsync(destinationId))
+            .ReturnsAsync(new Account { Id = destinationId, Currency = "USD" });
+
+        var service = new TransfersService(mockRepo.Object);
+
+        // Accounts are USD but the transfer requests ARS
+        await Assert.ThrowsAsync<CurrencyMismatchException>(
+            () => service.ApplyTransferAsync(sourceId, destinationId, 100m, "ARS"));
     }
 }

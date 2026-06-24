@@ -29,6 +29,9 @@ public class TransfersService : ITransfersService
         if (source.Currency != destination.Currency)
             throw new CurrencyMismatchException(source.Currency, destination.Currency);
 
+        if (currency != source.Currency)
+            throw new CurrencyMismatchException(currency, source.Currency);
+
         return await _repository.ApplyTransferAsync(sourceId, destinationId, amount, currency);
     }
 
