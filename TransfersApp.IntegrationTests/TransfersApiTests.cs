@@ -16,7 +16,7 @@ public class TransfersApiTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task PostTransfer_MultipleParallelRequests_AllReturn201()
+    public async Task PostTransfer_MultipleParallelRequests_AllReturn201WithValidLocationHeader()
     {
         // 5 transfers of 10.00 from Alice to Bob, each with a unique key — all new requests
         const int count = 5;
@@ -38,14 +38,26 @@ public class TransfersApiTests : IClassFixture<WebApplicationFactory<Program>>
 
         var responses = await Task.WhenAll(tasks);
 
-        Assert.All(responses, r => Assert.Equal(HttpStatusCode.Created, r.StatusCode));
+        var locationAndIds = await Task.WhenAll(responses.Select(async r =>
+        {
+            Assert.Equal(HttpStatusCode.Created, r.StatusCode);
+            var json = await r.Content.ReadFromJsonAsync<JsonElement>();
+            var id = json.GetProperty("id").GetString()!;
+            return (Location: r.Headers.Location, Id: id);
+        }));
+
+        Assert.All(locationAndIds, item =>
+        {
+            Assert.NotNull(item.Location);
+            Assert.EndsWith($"/api/transfers/{item.Id}", item.Location.AbsolutePath);
+        });
     }
 
     [Fact]
-    public async Task PostTransfer_SameKeySameBody_AllReturn201WithSameTransferId()
+    public async Task PostTransfer_SameKeySameBody_AllReturn201WithSameTransferIdAndSameLocation()
     {
         // Same key + same body sent 5 times concurrently — only one transfer processes,
-        // all responses must be 201 and contain the same transfer id.
+        // all responses must be 201, share the same transfer id, and point to the same Location.
         const string key = "idempotent-same-body-key";
         var body = new
         {
@@ -72,10 +84,15 @@ public class TransfersApiTests : IClassFixture<WebApplicationFactory<Program>>
         var ids = await Task.WhenAll(responses.Select(async r =>
         {
             var json = await r.Content.ReadFromJsonAsync<JsonElement>();
-            return json.GetProperty("id").GetString();
+            return json.GetProperty("id").GetString()!;
         }));
 
         Assert.All(ids, id => Assert.Equal(ids[0], id));
+
+        var locations = responses.Select(r => r.Headers.Location).ToList();
+        Assert.All(locations, loc => Assert.NotNull(loc));
+        Assert.All(locations, loc => Assert.Equal(locations[0], loc));
+        Assert.EndsWith($"/api/transfers/{ids[0]}", locations[0]!.AbsolutePath);
     }
 
     [Fact]
