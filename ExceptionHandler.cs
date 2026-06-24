@@ -13,8 +13,11 @@ public class ExceptionHandler : IExceptionHandler
     {
         var (statusCode, title) = exception switch
         {
-            AccountNotFoundException => (StatusCodes.Status404NotFound, "Account Not Found"),
-            InsufficientFundsException => (StatusCodes.Status422UnprocessableEntity, "Insufficient Funds"),
+            AccountNotFoundException       => (StatusCodes.Status404NotFound, "Account Not Found"),
+            InsufficientFundsException     => (StatusCodes.Status422UnprocessableEntity, "Insufficient Funds"),
+            InvalidTransferAmountException => (StatusCodes.Status422UnprocessableEntity, "Invalid Transfer Amount"),
+            SameAccountTransferException   => (StatusCodes.Status422UnprocessableEntity, "Same Account Transfer"),
+            CurrencyMismatchException      => (StatusCodes.Status422UnprocessableEntity, "Currency Mismatch"),
             _ => (0, null)
         };
 

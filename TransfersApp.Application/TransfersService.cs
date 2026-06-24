@@ -1,4 +1,5 @@
 using TransfersApp.Domain.Entities;
+using TransfersApp.Domain.Exceptions;
 using TransfersApp.Domain.Interfaces;
 
 namespace TransfersApp.Application;
@@ -12,8 +13,24 @@ public class TransfersService : ITransfersService
         _repository = repository;
     }
 
-    public Task<Transfer> ApplyTransferAsync(Guid sourceId, Guid destinationId, decimal amount, string currency)
-        => _repository.ApplyTransferAsync(sourceId, destinationId, amount, currency);
+    public async Task<Transfer> ApplyTransferAsync(Guid sourceId, Guid destinationId, decimal amount, string currency)
+    {
+        if (amount <= 0)
+            throw new InvalidTransferAmountException(amount);
+
+        if (sourceId == destinationId)
+            throw new SameAccountTransferException(sourceId);
+
+        var source = await _repository.GetAccountByIdAsync(sourceId)
+            ?? throw new AccountNotFoundException(sourceId);
+        var destination = await _repository.GetAccountByIdAsync(destinationId)
+            ?? throw new AccountNotFoundException(destinationId);
+
+        if (source.Currency != destination.Currency)
+            throw new CurrencyMismatchException(source.Currency, destination.Currency);
+
+        return await _repository.ApplyTransferAsync(sourceId, destinationId, amount, currency);
+    }
 
     public Task<Transfer?> GetTransferByIdAsync(Guid id)
         => _repository.GetTransferByIdAsync(id);
