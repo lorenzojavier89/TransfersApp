@@ -30,6 +30,7 @@ public class ExceptionHandler : IExceptionHandler
             Detail = exception.Message
         };
         httpContext.Response.StatusCode = statusCode;
+        httpContext.Response.ContentType = "application/problem+json";
         await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
         return true;
     }

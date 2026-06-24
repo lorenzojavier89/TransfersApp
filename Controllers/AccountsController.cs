@@ -18,6 +18,8 @@ public class AccountsController : ControllerBase
     public async Task<IActionResult> GetAccount(Guid id)
     {
         var account = await _service.GetAccountByIdAsync(id);
-        return account is null ? NotFound() : Ok(account);
+        return account is null
+            ? Problem(detail: $"Account '{id}' was not found.", statusCode: StatusCodes.Status404NotFound, title: "Not Found")
+            : Ok(account);
     }
 }

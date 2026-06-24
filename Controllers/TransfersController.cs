@@ -43,7 +43,10 @@ public class TransfersController : ControllerBase
         {
             NewTransfer(var t)    => CreatedAtAction(nameof(GetTransfer), new { id = t.Id }, t),
             CachedTransfer(var t) => CreatedAtAction(nameof(GetTransfer), new { id = t.Id }, t),
-            ConflictingBody       => Conflict("A different transfer with the same Idempotency-Key already exists."),
+            ConflictingBody       => Problem(
+                detail: "A different transfer with the same Idempotency-Key already exists.",
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Conflict"),
             _                     => throw new InvalidOperationException("Unexpected idempotency result")
         };
     }
@@ -52,6 +55,8 @@ public class TransfersController : ControllerBase
     public async Task<IActionResult> GetTransfer(Guid id)
     {
         var transfer = await _service.GetTransferByIdAsync(id);
-        return transfer is null ? NotFound() : Ok(transfer);
+        return transfer is null
+            ? Problem(detail: $"Transfer '{id}' was not found.", statusCode: StatusCodes.Status404NotFound, title: "Not Found")
+            : Ok(transfer);
     }
 }
