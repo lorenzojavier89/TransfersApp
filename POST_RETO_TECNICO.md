@@ -148,6 +148,9 @@ return result switch
 ```
 
 Ventajas: la firma comunica exactamente qué puede ocurrir, sin overhead de stack traces, y el `ExceptionHandler` queda reservado solo para errores genuinamente inesperados.
+Desventaja:
+- Más código inicial; los tests unitarios cambian de Assert.ThrowsAsync a Assert.IsType<T>
+Para esta app en su estado actual, el impacto práctico es mínimo — es in-memory y de bajo tráfico. Pero si fuera a producción con volumen real, el Result pattern sería el camino correcto
 
 ---
 
