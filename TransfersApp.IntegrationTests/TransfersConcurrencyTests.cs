@@ -23,7 +23,8 @@ public class TransfersConcurrencyTests : IClassFixture<WebApplicationFactory<Pro
         const int count = 50;
         const decimal amount = 100m;
 
-        var tasks = Enumerable.Range(0, count).Select(_ =>
+        var barrier = new Barrier(count);
+        var tasks = Enumerable.Range(0, count).Select(_ => Task.Run(async () =>
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/transfers")
             {
@@ -36,8 +37,11 @@ public class TransfersConcurrencyTests : IClassFixture<WebApplicationFactory<Pro
                 })
             };
             request.Headers.Add("Idempotency-Key", Guid.NewGuid().ToString());
-            return _client.SendAsync(request);
-        });
+
+            barrier.SignalAndWait();
+
+            return await _client.SendAsync(request);
+        }));
 
         var responses = await Task.WhenAll(tasks);
         var statuses = responses.Select(r => r.StatusCode).ToList();
