@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using TransfersApp.Application;
 using TransfersApp.Models;
@@ -28,7 +31,8 @@ public class TransfersController : ControllerBase
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Bad Request");
 
-        var bodyHash = $"{request.SourceAccountId}|{request.DestinationAccountId}|{request.Amount}|{request.Currency}";
+        var bodyHash = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request))));
 
         var result = await _idempotencyService.ExecuteAsync(
             idempotencyKey,
