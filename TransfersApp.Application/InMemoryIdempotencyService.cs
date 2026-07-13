@@ -7,7 +7,7 @@ public class InMemoryIdempotencyService : IIdempotencyService
 {
     private record Entry(string BodyHash, TaskCompletionSource<Transfer> Tcs);
 
-    private readonly ConcurrentDictionary<string, Entry> _store = new();
+    private readonly ConcurrentDictionary<string, Entry> _store = new(StringComparer.OrdinalIgnoreCase);
 
     public async Task<IdempotencyCheckResult> ExecuteAsync(
         string key, string bodyHash, Func<Task<Transfer>> processAsync)

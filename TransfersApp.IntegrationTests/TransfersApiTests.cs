@@ -119,6 +119,41 @@ public class TransfersApiTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task PostTransfer_SameKeyDifferentCasing_TreatedAsIdenticalKey()
+    {
+        var body = new
+        {
+            sourceAccountId = "11111111-1111-1111-1111-111111111111",
+            destinationAccountId = "22222222-2222-2222-2222-222222222222",
+            amount = 10.00m,
+            currency = "USD"
+        };
+
+        var first = new HttpRequestMessage(HttpMethod.Post, "/api/transfers")
+        {
+            Content = JsonContent.Create(body)
+        };
+        first.Headers.Add("Idempotency-Key", "case-sensitivity-test-key");
+
+        var second = new HttpRequestMessage(HttpMethod.Post, "/api/transfers")
+        {
+            Content = JsonContent.Create(body)
+        };
+        second.Headers.Add("Idempotency-Key", "CASE-SENSITIVITY-TEST-KEY");
+
+        var firstResponse = await _client.SendAsync(first);
+        var secondResponse = await _client.SendAsync(second);
+
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, secondResponse.StatusCode);
+
+        var firstId = (await firstResponse.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+        var secondId = (await secondResponse.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+
+        Assert.Equal(firstId, secondId);
+    }
+
+    [Fact]
     public async Task PostTransfer_SameKeyDifferentBody_AtLeastOneCreatedRestConflict()
     {
         // Same key, 5 different amounts — one wins and returns 201, the rest return 409
